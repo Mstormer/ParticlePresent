@@ -1,0 +1,169 @@
+/* Layout: the light field (WebGL) fills the whole screen at any aspect ratio; the 1920×1080 typography stage is scaled
+   to fit and centered on top of it; film grain over everything. One continuous world; slides only change what the light becomes. */
+:root{
+  --bg:#040A09;
+  --ink:#F2F5F0; --mute:#97AAA3; --dim:#5F726C;
+  --gold:#F6BC4E;   /* intelligence as gift */
+  --leaf:#8AD6A8;   /* growth, process, the garden */
+  --coral:#F3846B;  /* cost, loss, the shortcut */
+  --sky:#8CC3EC;    /* the machine */
+  --sans:"Mona Sans","Avenir Next","Segoe UI",system-ui,sans-serif;
+  --ease:cubic-bezier(.16,1,.3,1);
+  --ease2:cubic-bezier(.65,0,.35,1);
+  color-scheme:dark;
+  /* the shared presenter modules (deck-ui, deck-editor) read these */
+  --ui-ink:var(--ink); --ui-mute:var(--mute); --ui-dim:var(--dim); --ui-gold:var(--gold); --ui-leaf:var(--leaf); --ui-coral:var(--coral); --ui-sky:var(--sky);
+  --ui-font:var(--sans); --ui-btn:rgba(16,30,27,.86); --ui-btn-hover:rgba(24,44,40,.9); --ui-raise:rgba(16,30,27,.86); --ui-sheet:rgba(6,14,12,.95);
+  --ui-scrim:rgba(3,8,7,.93); --ui-box:#0B1715; --ui-field:#050B0A; --ui-card:rgba(16,30,27,.9); --ui-line:rgba(255,255,255,.12);
+  --ui-ed:#08110F; --ui-field-ed:#040A09; --ui-on-gold:#16130A; --ui-hd-edge:#071210;
+}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);overflow:hidden;
+  -webkit-font-smoothing:antialiased;user-select:none;-webkit-user-select:none;transition:background-color 1s ease}
+body.idle{cursor:none}
+#viewport{position:fixed;inset:0;overflow:hidden;background:var(--bg);transition:background-color 1s ease}
+#gl{position:absolute;left:0;top:0;width:100%;height:100%;display:block;transition:opacity 1s ease}
+#stage{position:absolute;left:0;top:0;width:1920px;height:1080px;transform-origin:0 0;overflow:hidden}
+#fallbackbg{position:absolute;inset:0;display:none;background:radial-gradient(1200px 800px at 75% 40%,rgba(140,195,236,.10),transparent 60%),radial-gradient(900px 700px at 20% 80%,rgba(138,214,168,.06),transparent 60%),var(--bg)}
+.nogl #fallbackbg{display:block}
+h1,h2,h3,p{margin:0}
+.abs{position:absolute}
+.stack{display:flex;flex-direction:column;gap:var(--g,24px)}
+.row{display:flex;align-items:center;gap:var(--g,24px)}
+
+/* Type: one superfamily, width and weight do the talking. Scale 300 / 146 / 104 / 70 / 44 / 33 / 25 / 20 */
+.d1{font-weight:640;font-stretch:108%;font-size:150px;line-height:.95;letter-spacing:-.04em;text-wrap:balance}
+.d2{font-weight:610;font-stretch:106%;font-size:104px;line-height:1.02;letter-spacing:-.032em;text-wrap:balance}
+.d3{font-weight:540;font-stretch:103%;font-size:70px;line-height:1.12;letter-spacing:-.02em;text-wrap:balance}
+.quote{font-style:italic;font-weight:440;font-stretch:100%}
+.d2.quote{font-weight:520}
+.t1{font-size:44px;line-height:1.32;font-weight:400;letter-spacing:-.005em;text-wrap:pretty}
+.t2{font-size:33px;line-height:1.45;font-weight:400;text-wrap:pretty}
+.t3{font-size:25px;line-height:1.45;font-weight:500}
+.num{font-weight:780;font-stretch:125%;line-height:.9;letter-spacing:-.045em}
+.lab{font-size:20px;font-weight:620;font-stretch:125%;letter-spacing:.26em;text-transform:uppercase}
+.mute{color:var(--mute)} .c-leaf{color:var(--leaf)} .c-gold{color:var(--gold)} .c-coral{color:var(--coral)} .c-sky{color:var(--sky)} .c-ink{color:var(--ink)}
+.dimop{color:var(--dim)}
+.eyebrow{position:absolute;left:120px;top:82px;display:flex;align-items:center;gap:18px;font-size:20px;font-weight:620;font-stretch:125%;letter-spacing:.26em;text-transform:uppercase;color:var(--gold)}
+.eyebrow::before{content:"";width:48px;height:2px;background:currentColor;opacity:.8}
+.src{position:absolute;left:120px;bottom:50px;font-size:20px;color:var(--dim);letter-spacing:.01em}
+.glowword{text-shadow:0 0 0 rgba(246,188,78,0)}
+.on .glowword{animation:glowtext 4s ease-in-out 2.4s infinite}
+
+/* Glass */
+.glass{background:linear-gradient(180deg,rgba(255,255,255,.075),rgba(255,255,255,.025));border:1px solid rgba(255,255,255,.12);
+  backdrop-filter:blur(22px) saturate(1.25);-webkit-backdrop-filter:blur(22px) saturate(1.25);
+  box-shadow:0 40px 90px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.10)}
+.aiq{font-size:54px;line-height:1.3;font-weight:460;letter-spacing:-.012em}
+.pill{display:inline-flex;align-items:center;gap:14px;padding:16px 28px;border-radius:999px;font-size:30px;font-weight:560;white-space:nowrap;align-self:flex-start}
+.msg{padding:22px 32px;font-size:31px;line-height:1.35;border-radius:34px;max-width:620px}
+.msg.me{align-self:flex-end;border-radius:34px 34px 10px 34px;color:var(--ink)}
+.msg.ai{align-self:flex-start;border-radius:34px 34px 34px 10px;border-color:rgba(140,195,236,.35)}
+.ledger{border-radius:30px;padding:10px 44px;font-size:42px}
+.lrow{display:flex;justify-content:space-between;align-items:baseline;padding:28px 0;border-bottom:1px solid rgba(255,255,255,.10)}
+.lrow:last-child{border-bottom:none}
+.lrow b{font-weight:680;font-stretch:115%}
+.lrow.total{color:var(--ink);font-weight:600}
+.stamp{border:5px solid var(--coral);border-radius:22px;padding:20px 30px;color:var(--coral);background:rgba(243,132,107,.08);transform-origin:50% 50%}
+.stn{font-size:54px;font-weight:660;font-stretch:110%;letter-spacing:-.02em;transform:translateX(-50%)}
+.fx{text-align:center}
+.cap{text-align:center}
+.barv,.barc{transform:translateX(-50%);text-align:center;white-space:nowrap}
+.axis{font-size:20px;font-weight:600;font-stretch:120%;letter-spacing:.2em;text-transform:uppercase;color:var(--dim)}
+.sign{font-size:40px;font-weight:680;font-stretch:112%;transform:translate(-50%,-50%)}
+.strike{position:absolute;left:0;top:0;width:900px;height:4px;border-radius:2px;background:var(--coral);transform-origin:0 50%;transform:scaleX(0)}
+.on .humanstep.shown .strike{animation:growx .6s var(--ease) both}
+.aipill .pill,.aistep .pill{transition:opacity .6s}
+.slide:has(.humanstep.shown) .aistep .pill{opacity:.35}
+.animalbox{transition:opacity .6s ease}
+.slide:has(.aistep.shown) .animalbox{opacity:0}
+.slide:has(.humanstep.shown) .animalbox{opacity:1}
+.animalname{display:flex;align-items:center;min-height:226px;margin:8px 0 0;transition:color .6s ease}
+.animalname .an{display:block;font-size:150px;line-height:.92;white-space:nowrap;transition:color .6s ease}
+.animalname .caret{margin-right:-.11em}
+.animalname .heb{display:flex;align-items:baseline;gap:40px}
+.animalname .he{font-family:"Hebrew Serif","Noto Serif Hebrew","Times New Roman",serif;font-size:150px;line-height:1.15;font-weight:500;font-stretch:100%;letter-spacing:0}
+.animalname .tr{font-size:70px;font-weight:520;font-stretch:100%;letter-spacing:-.01em;color:var(--ink);opacity:.85}
+.animalname .en{display:block;margin-top:10px;font-size:40px;line-height:1.1;font-weight:600;font-stretch:108%;letter-spacing:.01em;color:var(--mute)}
+.animalname .an.pop{animation:nameIn .9s var(--ease) both}
+@keyframes nameIn{from{opacity:0;transform:translateY(26px);filter:blur(10px)}to{opacity:1;transform:none;filter:none}}
+.namelog{display:flex;flex-direction:column;gap:6px;margin-top:4px}
+.namelog p{margin:0;font-size:30px;line-height:1.2;font-weight:560;font-stretch:108%;letter-spacing:-.005em;white-space:nowrap;animation:logIn .8s var(--ease) both}
+.namelog p:nth-child(1){opacity:.6} .namelog p:nth-child(2){opacity:.38} .namelog p:nth-child(3){opacity:.2} .namelog p:nth-child(4){opacity:.09}
+@keyframes logIn{from{transform:translateY(-34px);filter:blur(5px)}to{transform:none;filter:none}}
+.travelers circle{filter:drop-shadow(0 0 8px rgba(255,217,138,.9))}
+
+/* Slides */
+.slide{position:absolute;inset:0;color:var(--ink);opacity:0;visibility:hidden;
+  transition:opacity .55s ease,visibility 0s linear .55s}
+.slide.on{opacity:1;visibility:visible;transition:opacity .9s ease .15s,visibility 0s}
+.notes{display:none}
+
+/* Entrances (run every time a slide becomes current) */
+.in{opacity:0}
+.on .in{animation:var(--anim,rise) var(--dur,1.1s) var(--ease) var(--d,0s) both}
+.pop{--anim:pop;--dur:.9s} .fade{--anim:fade;--dur:1.4s} .left{--anim:slideL} .right{--anim:slideR} .thud{--anim:thud;--dur:.8s}
+/* word-by-word masked reveal for headlines */
+.rv .w{display:inline-block;overflow:hidden;vertical-align:top;padding:0 .04em .14em;margin:0 -.04em -.14em}
+.rv .wi{display:inline-block;transform:translateY(110%);opacity:0}
+.on .rv .wi{animation:wordUp 1.15s var(--ease) calc(var(--d,0s) + var(--i,0) * 60ms) both}
+[data-step]:not(.shown){opacity:0!important;visibility:hidden}
+.on [data-step]:not(.shown),.on [data-step]:not(.shown) *{animation:none!important}
+
+@keyframes rise{from{opacity:0;transform:translateY(34px)}to{opacity:1;transform:none}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes pop{0%{opacity:0;transform:scale(.92) translateY(14px);filter:blur(10px)}100%{opacity:1;transform:none;filter:blur(0)}}
+@keyframes slideL{from{opacity:0;transform:translateX(-60px)}to{opacity:1;transform:none}}
+@keyframes slideR{from{opacity:0;transform:translateX(60px)}to{opacity:1;transform:none}}
+@keyframes thud{0%{opacity:0;transform:scale(1.9) rotate(-12deg);filter:blur(6px)}60%{opacity:1;transform:scale(.96) rotate(-5deg);filter:blur(0)}100%{opacity:1;transform:rotate(-5deg)}}
+@keyframes wordUp{0%{transform:translateY(110%);opacity:0}30%{opacity:1}100%{transform:none;opacity:1}}
+@keyframes growx{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes glowtext{0%,100%{text-shadow:0 0 0 rgba(246,188,78,0)}50%{text-shadow:0 0 30px rgba(246,188,78,.75)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+.on .spinslow{animation:spin 14s linear infinite}
+.zbadge{text-shadow:0 0 40px rgba(243,132,107,.55)}
+
+.ch{opacity:0;transition:opacity .12s}
+.ch.v{opacity:1}
+.caret{display:inline-block;width:.07em;height:1em;margin-left:.04em;margin-right:-.11em;vertical-align:-.12em;background:var(--sky);animation:caret 1s steps(1) infinite}
+@keyframes caret{50%{opacity:0}}
+
+/* Film grain */
+.grain{position:absolute;inset:-60px;pointer-events:none;z-index:2;opacity:.07;mix-blend-mode:overlay;background-size:180px 180px;animation:grain 1s steps(5) infinite}
+@keyframes grain{0%{transform:translate(0,0)}20%{transform:translate(-30px,20px)}40%{transform:translate(20px,-40px)}60%{transform:translate(-40px,-10px)}80%{transform:translate(30px,30px)}100%{transform:translate(0,0)}}
+
+/* Finale: after the last question appears, everything else fades to black; then the question itself */
+.finalwrap{transition:transform 1.2s var(--ease),opacity 1.2s ease}
+.fadeaway{transition:opacity 1s ease}
+body.finale .slide.on .fadeaway{opacity:0}
+body.finale #viewport,body.finale{background-color:#000;transition:background-color 5s ease}
+body.finale #bar{opacity:0}
+body.finale2 .slide.on .finalwrap{opacity:0;transition:opacity 3s ease}
+body.dissolve .slide.on .finalwrap{opacity:0;transition:opacity .35s ease}
+body.qlight .slide.on .finalwrap{opacity:0;transition:opacity .25s ease} /* the particles carry the question */
+body.finale .slide.on .fadeaway{transition:opacity 1.6s ease}
+
+[hidden]{display:none!important}
+
+@media (prefers-reduced-motion: reduce){
+  .slide,.slide *{animation-duration:1ms!important;animation-iteration-count:1!important;animation-delay:0s!important;transition-duration:1ms!important}
+  .grain{animation:none}
+}
+
+
+/* ---------- Editor (the deck-editor module brings its panel and selection CSS; these are the deck's own edit-mode rules) ---------- */
+body.edit #viewport{right:var(--edw)}
+body.edit .slide,body.edit .slide *{animation-duration:1ms!important;animation-delay:0s!important;animation-iteration-count:1!important;transition-duration:1ms!important;transition-delay:0s!important}
+body.edit .slide.on [data-e]{cursor:move}
+body:not(.edit) .ed-hidden{display:none!important}
+body.edit .ed-hidden{opacity:.25!important;outline:2px dashed rgba(243,132,107,.7);outline-offset:4px}
+
+/* naming slide: the cross-out belongs to the AI pill itself, so it always sits through its middle */
+.aistep{display:flex}
+.aistep::after{content:'';position:absolute;left:-14px;right:-14px;top:50%;height:5px;margin-top:-2.5px;border-radius:3px;background:var(--coral);box-shadow:0 0 14px rgba(243,132,107,.55);transform-origin:0 50%;transform:scaleX(0);pointer-events:none}
+.slide.on:has(.humanstep.shown) .aistep::after{animation:growx .6s var(--ease) both}
+.humanstep .strike{display:none}
+.ch:has(.caret){position:relative}.ch>.caret{position:absolute;left:100%;top:.1em;margin:0 0 0 .04em} /* out of the text flow: it can never push a line break */
+/* slide 22: the flattering replies read as a warning */
+#flatter .msg.ai,.msg.ai.warn{background:linear-gradient(180deg,rgba(243,132,107,.24),rgba(243,132,107,.10));border-color:rgba(243,132,107,.55);box-shadow:0 0 40px rgba(243,132,107,.12)}
+
